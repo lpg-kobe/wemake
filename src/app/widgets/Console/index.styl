@@ -1,0 +1,24 @@
+.widget-content {
+    position: relative;
+
+    &.hidden {
+        display: none;
+    }
+
+    &.fullscreen {
+        .terminal-container {
+            height: 100%;
+        }
+    }
+}
+
+.no-serial-connection {
+    padding: 10px;
+    color: #333;
+    opacity: .65;
+}
+
+.terminal-container {
+    background: #000;
+    height: 260px;
+}
