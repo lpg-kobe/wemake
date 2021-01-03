@@ -15,7 +15,7 @@ import styles from './widgets.styl';
 
 /**
  * Primary Widgets
- *
+ * all widgets render in page or not decinded width store setting by name of widgets,see app/store/
  * Widget container on the left of workspace.
  */
 class PrimaryWidgets extends Component {

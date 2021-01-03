@@ -1,3 +1,6 @@
+/**
+ * @desc manage all print device connection not only wifi & serial
+ */
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';

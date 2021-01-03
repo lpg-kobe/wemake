@@ -6,6 +6,10 @@ import store from '../../store';
 import Widget from '../../widgets';
 import styles from './widgets.styl';
 
+/**
+ * all widgets render in page or not decinded width store setting by name of widgets,see app/store/
+ * DefaultWidgets
+ */
 const DefaultWidgets = (props) => {
     const { className } = props;
     const defaultWidgets = store.get('workspace.container.default.widgets');

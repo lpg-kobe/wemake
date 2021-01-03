@@ -19,6 +19,7 @@ import PrintingConfigurationsWidget from './PrintingConfigurations';
 import PrintingOutputWidget from './PrintingOutput';
 
 
+/** main function to return Widget witch you want to render on your component by setting name  */
 const getWidgetByName = (name) => {
     const Widget = {
         'axes': AxesWidget,

@@ -24,6 +24,7 @@ class SerialConnection extends EventEmitter {
 
     writeFilter = (data) => data;
 
+    // emit all data to marlinController or other after get data when open a new serialport
     eventListener = {
         data: (data) => {
             this.emit('data', data);

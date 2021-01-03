@@ -251,7 +251,7 @@ const createApplication = () => {
         next();
     });
 
-    // Register API routes with public access
+    // Register API routes with public access, this can auto generate a jwt token by version of package.json if you don't set a token width user login
     // Also see "src/app/app.js"
     app.post(urljoin(settings.route, 'api/signin'), api.users.signin);
 

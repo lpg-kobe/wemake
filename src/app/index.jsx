@@ -68,6 +68,7 @@ series([
             .then(({ authenticated }) => {
                 if (authenticated) {
                     log.debug('Create and establish a WebSocket connection');
+                    // connect socket.io after get jwt-token
                     controller.connect(() => {
                         next();
                     });

@@ -127,9 +127,10 @@ const createServer = (options, callback) => {
         server: () => createApplication()
     });
 
+    /** create server with webappengine in order to run dev server with not only express & webpack-dev-server & socket.io & static */
     webappengine({ port, host, backlog, routes })
         .on('ready', (server) => {
-            // Start services
+            // Start services width socket.io
             startServices(server);
 
             // Deal with address bindings

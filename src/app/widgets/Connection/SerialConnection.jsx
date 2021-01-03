@@ -1,3 +1,6 @@
+/**
+ * @desc manage device connection of serial 
+ */
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
@@ -84,6 +87,7 @@ class SerialConnection extends PureComponent {
         }
     }
 
+    /** listen port listed request from controller */
     onListPorts(ports) {
         // Update loading state
         if (this.loadingTimer) {
@@ -101,6 +105,7 @@ class SerialConnection extends PureComponent {
         log.debug('Received serial ports:', ports);
 
         const { config } = this.props;
+
         const port = config.get('port') || '';
 
         if (includes(map(ports, 'port'), port)) {
@@ -189,6 +194,7 @@ class SerialConnection extends PureComponent {
         controller.listPorts();
     }
 
+    /** open port of print device */
     openPort(port) {
         this.setState({
             status: STATUS_CONNECTING

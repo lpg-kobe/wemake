@@ -1,3 +1,10 @@
+/**
+ * @desc main controller of not only get serialport list & sth opeated to serialport
+ * @note step of event handler between controller & renderComponent & socketServer
+ * @note 1、bind all event in renderComponent in order to add eventHandler to callbacks of        * @note controllers & listen event request for socket by socket.on(event,()=>{controllers[cbs]}) 
+ * @note 2、bind all events in socketServers once event happened it will emit it to controllers
+ * @note 3、send event request in renderComponent by controller in order to emit event of socket  * @note witch is listened in socketServer and it will continue to emit event whitch is added in  * @note step 1 & callback() 
+ */
 import noop from 'lodash/noop';
 import io from 'socket.io-client';
 import store from '../store';

@@ -1,3 +1,6 @@
+/**
+ * @desc manage device connection of wifi, default to close wifi connetion
+ */
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';

@@ -610,6 +610,7 @@ class MarlinController {
         };
     }
 
+    /** open a new serialport after inited malinController */
     open(callback = noop) {
         const { port } = this.options;
 

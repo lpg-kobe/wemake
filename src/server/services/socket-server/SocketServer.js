@@ -217,9 +217,11 @@ class SocketServer {
             });
         });
 
-        // Open serial port
+        // Open serial port after init marlinController and connect socket
         socket.on('serialport:open', (port) => {
             log.debug(`socket.open("${port}"): socket=${socket.id}`);
+
+            console.log(`handle event by socket server for socket.serialport:open request ===============>`,port)
 
             let controller = store.get(`controllers["${port}"]`);
             if (!controller) {

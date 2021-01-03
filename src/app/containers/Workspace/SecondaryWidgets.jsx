@@ -15,6 +15,7 @@ import styles from './widgets.styl';
 
 /**
  * Secondary widgets.
+ * all widgets render in page or not decinded width store setting by name of widgets,see app/store/
  */
 class SecondaryWidgets extends Component {
     static propTypes = {
