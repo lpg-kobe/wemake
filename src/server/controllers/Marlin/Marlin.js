@@ -342,6 +342,7 @@ class Marlin extends events.EventEmitter {
         enclosure: false
     };
 
+    // main parser to parse result code of serialport
     parser = new MarlinLineParser();
 
     setState(state) {

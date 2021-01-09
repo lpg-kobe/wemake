@@ -162,7 +162,7 @@ class Sender extends events.EventEmitter {
             this.dataFilter = options.dataFilter;
         }
 
-        // character-counting
+        // character-counting and emit data to controller
         if (type === SP_TYPE_CHAR_COUNTING) {
             this.sp = new SPCharCounting(options, (sp) => {
                 if (sp.queue.length > 0) {

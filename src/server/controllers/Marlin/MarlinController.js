@@ -29,8 +29,7 @@ import {
     WRITE_SOURCE_CLIENT,
     WRITE_SOURCE_FEEDER,
     WRITE_SOURCE_SENDER,
-    WRITE_SOURCE_QUERY,
-    HEAD_TYPE_3DP
+    WRITE_SOURCE_QUERY
 } from './constants';
 
 // % commands
@@ -166,31 +165,6 @@ class MarlinController {
         }, 500);
     })();
 
-    queryTemperature = (() => {
-        let lastQueryTime = 0;
-
-        return _.throttle(() => {
-            // Check the ready flag
-            if (!this.ready) {
-                return;
-            }
-            const now = new Date().getTime();
-            if (!this.query.type) {
-                this.query.type = QUERY_TYPE_TEMPERATURE;
-                lastQueryTime = now;
-            } else {
-                const timespan = Math.abs(now - lastQueryTime);
-                const toleranceTime = 10000; // 10 seconds
-
-                if (timespan >= toleranceTime) {
-                    log.silly(`Reschedule temperture report query: now=${now}ms, timespan=${timespan}ms`);
-                    this.query.type = QUERY_TYPE_TEMPERATURE;
-                    lastQueryTime = now;
-                }
-            }
-        }, 1000);
-    })();
-
     dataFilter = (line, context) => {
         // Current position
         const {
@@ -256,7 +230,7 @@ class MarlinController {
             }
         });
 
-        // Feeder
+        // Feeder,queue to controll events like feed & next.. 
         this.feeder = new Feeder({
             dataFilter: (line, context) => {
                 if (line === WAIT) {
@@ -268,6 +242,7 @@ class MarlinController {
                 return this.dataFilter(line, context);
             }
         });
+        // this will happend and run dataFilter once you call this.feeder.next()
         this.feeder.on('data', (line = '', context = {}) => {
             if (!this.isOpen()) {
                 log.error(`Serial port "${this.options.port}" is not accessible`);
@@ -281,12 +256,12 @@ class MarlinController {
 
             this.emitAll('serialport:write', line, context);
             this.writeln(line, {
-                source: WRITE_SOURCE_FEEDER
+                source: WRITE_SOURCE_FEEDER // set write source to record history of serial, witch contain write source & write line like 'G0 XX YY'
             });
             log.silly(`> ${line}`);
         });
 
-        // Sender
+        // Sender ,init to load gcode and emit data to this 
         this.sender = new Sender(SP_TYPE_SEND_RESPONSE, {
             dataFilter: (line, context) => {
                 if (line === WAIT) {
@@ -350,12 +325,12 @@ class MarlinController {
         this.workflow.on('pause', () => {
             this.emitAll('workflow:state', this.workflow.state);
         });
-        this.workflow.on('resume', () => {
+        this.workflow.on('resume', () => { 
             this.emitAll('workflow:state', this.workflow.state);
-            this.sender.next();
+            this.sender.next(); // calculate time width handle gcode after restart workflow
         });
 
-        // Marlin
+        // Marlin 
         this.controller = new Marlin();
 
         this.controller.on('firmware', (res) => {
@@ -521,10 +496,6 @@ class MarlinController {
 
             // M114 - Get Current Position
             this.queryPosition();
-            if (this.state.headType === HEAD_TYPE_3DP) {
-                // M105 - Get Temperature Report
-                this.queryTemperature();
-            }
 
             {
                 // The following criteria must be met to issue a query(kickoff)
