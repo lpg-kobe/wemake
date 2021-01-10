@@ -28,6 +28,7 @@ class GCodeRenderer {
         this.frameIndex = 0;
     }
 
+    // gcode可视化three.js
     renderGcode(gcode, name, renderMethod) {
         const geometry = new THREE.Geometry();
 

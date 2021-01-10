@@ -361,6 +361,7 @@ class Marlin extends events.EventEmitter {
         }
     }
 
+    // parse data callback from serialport
     parse(data) {
         data = (String(data)).replace(/\s+$/, '');
         if (!data) {
@@ -372,10 +373,10 @@ class Marlin extends events.EventEmitter {
         const result = this.parser.parse(data) || {};
         const { type, payload } = result;
 
-        if (type === MarlinReplyParserFirmwareVersion) {
+        if (type === MarlinReplyParserFirmwareVersion) { // not support now width wemake
             this.setState({ version: payload.version });
             this.emit('firmware', payload);
-        } else if (type === MarlinReplyParserReleaseDate) {
+        } else if (type === MarlinReplyParserReleaseDate) {// not support now width wemake
             this.emit('firmware', payload);
         } else if (type === MarlinReplyParserToolHead) {
             if (this.state.headType !== payload.headType) {
@@ -409,7 +410,7 @@ class Marlin extends events.EventEmitter {
         } else if (type === MarlinLineParserResultEcho) {
             this.emit('echo', payload);
         } else if (type === MarlinLineParserResultTemperature
-            || type === MarlinLineParserResultOkTemperature) {
+            || type === MarlinLineParserResultOkTemperature) {// not support now width wemake
             // For firmware version < 2.4, we use temperature to determine head type
             if (semver.lt(this.state.version, '2.4.0') && !this.state.headType) {
                 if (payload.temperature.t <= 275) {

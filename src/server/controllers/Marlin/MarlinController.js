@@ -53,7 +53,7 @@ class MarlinController {
 
     serialportListener = {
         data: (data) => {
-            log.silly(`< ${data}`);
+            log.silly(`data callback serialport: < ${data}`);
             this.controller.parse(String(data));
         },
         close: (err) => {
@@ -128,8 +128,8 @@ class MarlinController {
             if (this.query.type === QUERY_TYPE_POSITION) {
                 this.writeln('M114');
                 this.lastQueryTime = now;
-            } else if (this.query.type === QUERY_TYPE_TEMPERATURE) {
-                this.writeln('M105');
+            } else if (this.query.type === QUERY_TYPE_TEMPERATURE) { // not support now by wemake
+                // this.writeln('M105');
                 this.lastQueryTime = now;
             } else {
                 log.error('Unsupported query type: ', this.query.type);
@@ -233,11 +233,11 @@ class MarlinController {
         // Feeder,queue to controll events like feed & next.. 
         this.feeder = new Feeder({
             dataFilter: (line, context) => {
-                if (line === WAIT) {
-                    // G4 [P<time in ms>] [S<time in sec>]
-                    // If both S and P are included, S takes precedence.
-                    return `G4 P500 (${WAIT})`; // dwell
-                }
+                // if (line === WAIT) {
+                //     // G4 [P<time in ms>] [S<time in sec>]
+                //     // If both S and P are included, S takes precedence.
+                //     return `G4 P500 (${WAIT})`; // dwell
+                // }
 
                 return this.dataFilter(line, context);
             }
@@ -264,16 +264,16 @@ class MarlinController {
         // Sender ,init to load gcode and emit data to this 
         this.sender = new Sender(SP_TYPE_SEND_RESPONSE, {
             dataFilter: (line, context) => {
-                if (line === WAIT) {
-                    const { sent, received } = this.sender.state;
-                    log.debug(`Wait for the planner queue to empty: line=${sent + 1}, sent=${sent}, received=${received}`);
+                // if (line === WAIT) {
+                //     const { sent, received } = this.sender.state;
+                //     log.debug(`Wait for the planner queue to empty: line=${sent + 1}, sent=${sent}, received=${received}`);
 
-                    this.sender.hold();
+                //     this.sender.hold();
 
-                    // G4 [P<time in ms>] [S<time in sec>]
-                    // If both S and P are included, S takes precedence.
-                    return `G4 P500 (${WAIT})`; // dwell
-                }
+                //     // G4 [P<time in ms>] [S<time in sec>]
+                //     // If both S and P are included, S takes precedence.
+                //     return `G4 P500 (${WAIT})`; // dwell
+                // }
 
                 return this.dataFilter(line, context);
             }
@@ -333,7 +333,7 @@ class MarlinController {
         // Marlin 
         this.controller = new Marlin();
 
-        this.controller.on('firmware', (res) => {
+        this.controller.on('firmware', (res) => { // get version & release date from serialport:read
             if (!this.ready) {
                 this.ready = true;
 
@@ -344,7 +344,7 @@ class MarlinController {
                 }
             }
             if (_.includes([WRITE_SOURCE_CLIENT, WRITE_SOURCE_FEEDER], this.history.writeSource)) {
-                this.emitAll('serialport:read', res.raw);
+                this.emitAll('serialport:read', res.raw); 
             }
         });
         this.controller.on('headType', (res) => {
@@ -423,6 +423,7 @@ class MarlinController {
                 return;
             }
 
+            // handle some query such as position of mechine
             this.query.issue();
         });
 
@@ -508,8 +509,8 @@ class MarlinController {
                 }
             }
 
-            // Check if the machine has stopped movement after completion
-            if (this.senderFinishTime > 0) {
+            // Check if the machine has stopped movement after completion,it will be 0 if gcode hased ended width sender
+            if (this.senderFinishTime > 0) {// sending gcode
                 const machineIdle = zeroOffset;
                 const now = new Date().getTime();
                 const timespan = Math.abs(now - this.senderFinishTime);
@@ -712,17 +713,17 @@ class MarlinController {
                 }
 
                 // send M1005 to get firmware version (only support versions >= '2.2')
-                setTimeout(() => this.writeln('M1005'));
+                // setTimeout(() => this.writeln('M1005'));
 
                 // retrieve temperature to detect machineType (polyfill for versions < '2.2')
-                setTimeout(() => this.writeln('M105'), 200);
+                // setTimeout(() => this.writeln('M105'), 200);
             }, 1000);
 
             log.debug(`Connected to serial port "${port}"`);
 
             this.workflow.stop();
 
-            // Clear action values
+            // Clear action values，set 0 to end
             this.senderFinishTime = 0;
 
             if (this.sender.state.gcode) {
