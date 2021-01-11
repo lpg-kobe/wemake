@@ -7,6 +7,7 @@ import set from 'lodash/set';
 import events from 'events';
 import semver from 'semver';
 import { HEAD_TYPE_3DP, HEAD_TYPE_LASER, HEAD_TYPE_CNC } from './constants';
+import log from '../../../app/lib/log';
 
 // http://stackoverflow.com/questions/10454518/javascript-how-to-retrieve-the-number-of-decimals-of-a-string-number
 function decimalPlaces(num) {
@@ -22,47 +23,6 @@ function decimalPlaces(num) {
         - (match[2] ? +match[2] : 0)
     );
 }
-
-
-/**
- * Reply parser for tool head type (M1006)
- *
- * For details see [Snapmaker-GD32Base](https://snapmaker2.atlassian.net/wiki/spaces/SNAP/pages/3440681/Snapmaker-GD32Base).
- * Examples:
- *  'Firmware Version: Snapmaker-Base-2.2'
- *  'Firmware Version: Snapmaker-Base-2.4-beta'
- *  'Firmware Version: Snapmaker-Base-2.4-alpha3'
- */
-class MarlinReplyParserFirmwareVersion {
-    static parse(line) {
-        const r = line.match(/^Firmware Version: (.*)-([0-9.]+(-(alpha|beta)[1-9]?)?)$/);
-        if (!r) {
-            return null;
-        }
-        return {
-            type: MarlinReplyParserFirmwareVersion,
-            payload: {
-                version: semver.coerce(r[2])
-            }
-        };
-    }
-}
-
-class MarlinReplyParserReleaseDate {
-    static parse(line) {
-        const r = line.match(/^Release Date: (.*)$/);
-        if (!r) {
-            return null;
-        }
-        return {
-            type: MarlinReplyParserReleaseDate,
-            payload: {
-                releaseDate: r[2]
-            }
-        };
-    }
-}
-
 
 class MarlinReplyParserToolHead {
     static parse(line) {
@@ -114,9 +74,9 @@ class MarlinLineParserResultStart {
 
 
 class MarlinLineParserResultPosition {
-    // X:0.00 Y:0.00 Z:0.00 E:0.00 Count X:0 Y:0 Z:0
+    // <Idle,MPos:0.000,0.000,0.000,WPos:0.000,0.000,0.000>  
     static parse(line) {
-        const r = line.match(/^(?:(?:X|Y|Z|E):[0-9.-]+\s+)+/i);
+        const r = line.match(/^\<Idle/i);
         if (!r) {
             return null;
         }
@@ -124,18 +84,16 @@ class MarlinLineParserResultPosition {
         const payload = {
             pos: {}
         };
-        const pattern = /((X|Y|Z|E):[0-9.-]+)+/gi;
-        const params = r[0].match(pattern);
-
-        for (const param of params) {
-            const nv = param.match(/^(.+):(.+)/);
-            if (nv) {
-                const axis = nv[1].toLowerCase();
-                const pos = nv[2];
-                const digits = decimalPlaces(pos);
-                payload.pos[axis] = Number(pos).toFixed(digits);
-            }
+        const pattern = /WPos:(.+)/;
+        const params = line.match(pattern);
+        if(!params){
+            return null;
         }
+        const xyz = params[1].replace(/\>$/,'')
+        const posArr = xyz.split(',')
+        payload.pos['x'] = posArr[0]
+        payload.pos['y'] = posArr[1]
+        payload.pos['z'] = posArr[2]
 
         return {
             type: MarlinLineParserResultPosition,
@@ -262,9 +220,6 @@ class MarlinLineParser {
             MarlinLineParserResultOk,
 
             // New Parsers (follow pattern `MarlinReplyParserXXX`)
-            // M1005
-            MarlinReplyParserFirmwareVersion,
-            MarlinReplyParserReleaseDate,
             // M1006
             MarlinReplyParserToolHead,
             // M1010
@@ -373,12 +328,7 @@ class Marlin extends events.EventEmitter {
         const result = this.parser.parse(data) || {};
         const { type, payload } = result;
 
-        if (type === MarlinReplyParserFirmwareVersion) { // not support now width wemake
-            this.setState({ version: payload.version });
-            this.emit('firmware', payload);
-        } else if (type === MarlinReplyParserReleaseDate) {// not support now width wemake
-            this.emit('firmware', payload);
-        } else if (type === MarlinReplyParserToolHead) {
+        if (type === MarlinReplyParserToolHead) {
             if (this.state.headType !== payload.headType) {
                 this.setState({ headType: payload.headType });
             }
