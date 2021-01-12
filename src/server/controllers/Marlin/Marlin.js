@@ -91,9 +91,12 @@ class MarlinLineParserResultPosition {
         }
         const xyz = params[1].replace(/\>$/,'')
         const posArr = xyz.split(',')
-        payload.pos['x'] = posArr[0]
-        payload.pos['y'] = posArr[1]
-        payload.pos['z'] = posArr[2]
+        const digitsX = decimalPlaces(posArr[0]);
+        const digitsY = decimalPlaces(posArr[1]);
+        const digitsZ = decimalPlaces(posArr[2]);
+        payload.pos['x'] = Number(posArr[0]).toFixed(digitsX)
+        payload.pos['y'] = Number(posArr[1]).toFixed(digitsY)
+        payload.pos['z'] = Number(posArr[2]).toFixed(digitsZ)
 
         return {
             type: MarlinLineParserResultPosition,
