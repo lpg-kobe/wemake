@@ -23,7 +23,7 @@ import taskRunner from '../../services/taskrunner';
 import store from '../../store';
 import Marlin from './Marlin';
 import {
-    MARLIN,
+    GRBL,
     QUERY_TYPE_POSITION,
     QUERY_TYPE_TEMPERATURE,
     WRITE_SOURCE_CLIENT,
@@ -32,13 +32,11 @@ import {
     WRITE_SOURCE_QUERY
 } from './constants';
 
-// % commands
-const WAIT = '%wait';
 
-const log = logger('controller:Marlin');
+const log = logger('controller:Grbl');
 
-class MarlinController {
-    type = MARLIN;
+class GrblController {
+    type = GRBL;
 
     // Connections
     connections = {};
@@ -72,7 +70,6 @@ class MarlinController {
         }
     };
 
-    // Marlin
     controller = null;
 
     ready = false;
@@ -126,7 +123,7 @@ class MarlinController {
 
             const now = new Date().getTime();
             if (this.query.type === QUERY_TYPE_POSITION) {
-                this.writeln('?');
+                this.writeln('M114');
                 this.lastQueryTime = now;
             } else if (this.query.type === QUERY_TYPE_TEMPERATURE) { // not support now by wemake
                 // this.writeln('M105');
@@ -233,12 +230,6 @@ class MarlinController {
         // Feeder,queue to controll events like feed & next.. 
         this.feeder = new Feeder({
             dataFilter: (line, context) => {
-                // if (line === WAIT) {
-                //     // G4 [P<time in ms>] [S<time in sec>]
-                //     // If both S and P are included, S takes precedence.
-                //     return `G4 P500 (${WAIT})`; // dwell
-                // }
-
                 return this.dataFilter(line, context);
             }
         });
@@ -264,17 +255,6 @@ class MarlinController {
         // Sender ,init to load gcode and emit data to this 
         this.sender = new Sender(SP_TYPE_SEND_RESPONSE, {
             dataFilter: (line, context) => {
-                // if (line === WAIT) {
-                //     const { sent, received } = this.sender.state;
-                //     log.debug(`Wait for the planner queue to empty: line=${sent + 1}, sent=${sent}, received=${received}`);
-
-                //     this.sender.hold();
-
-                //     // G4 [P<time in ms>] [S<time in sec>]
-                //     // If both S and P are included, S takes precedence.
-                //     return `G4 P500 (${WAIT})`; // dwell
-                // }
-
                 return this.dataFilter(line, context);
             }
         });
@@ -333,6 +313,20 @@ class MarlinController {
         // Marlin 
         this.controller = new Marlin();
 
+        this.controller.on('firmware', (res) => { // get version & release date from serialport:read
+            if (!this.ready) {
+                this.ready = true;
+
+                const version = this.controller.state.version;
+                if (semver.gte(version, '2.4.0')) {
+                    // send M1006 to detect type of tool head
+                    this.writeln('M1006');
+                }
+            }
+            if (_.includes([WRITE_SOURCE_CLIENT, WRITE_SOURCE_FEEDER], this.history.writeSource)) {
+                this.emitAll('serialport:read', res.raw); 
+            }
+        });
         this.controller.on('headType', (res) => {
             log.silly(`controller.on('headType'): source=${this.history.writeSource},
                  line=${JSON.stringify(this.history.writeLine)}, res=${JSON.stringify(res)}`);
@@ -340,10 +334,7 @@ class MarlinController {
                 this.emitAll('serialport:read', res.raw);
             }
         });
-        this.controller.on('pos', (res) => {// get position from serialport:read to make sure mechine is ready
-            if (!this.ready) {
-                this.ready = true;
-            }
+        this.controller.on('pos', (res) => {
             log.silly(`controller.on('pos'): source=${this.history.writeSource}, line=${JSON.stringify(this.history.writeLine)}, res=${JSON.stringify(res)}`);
             if (_.includes([WRITE_SOURCE_CLIENT, WRITE_SOURCE_FEEDER], this.history.writeSource)) {
                 this.emitAll('serialport:read', res.raw);
@@ -441,8 +432,8 @@ class MarlinController {
         });
 
         this.controller.on('others', (res) => {
-            this.emitAll('serialport:read', `< ${res.raw}`);
-            log.error('Can\'t parse result, maybe correct.', res.raw);
+            this.emitAll('serialport:read', `others < ${res.raw}`);
+            log.error('Can\'t parse result', res.raw);
         });
 
         this.queryTimer = setInterval(() => {
@@ -484,7 +475,7 @@ class MarlinController {
                 return;
             }
 
-            // ? - Get Current Position
+            // M114 - Get Current Position
             this.queryPosition();
 
             {
@@ -701,8 +692,11 @@ class MarlinController {
                     return;
                 }
 
-                // send ? to get position 
-                setTimeout(() => this.writeln('?'));
+                // send M1005 to get firmware version (only support versions >= '2.2')
+                // setTimeout(() => this.writeln('M1005'));
+
+                // retrieve temperature to detect machineType (polyfill for versions < '2.2')
+                // setTimeout(() => this.writeln('M105'), 200);
             }, 1000);
 
             log.debug(`Connected to serial port "${port}"`);
@@ -889,7 +883,7 @@ class MarlinController {
                 this.workflow.resume();
             },
             'statusreport': () => {
-                this.writeln('?', { emit: true });
+                this.writeln('M114', { emit: true });
             },
             'homing': () => {
                 this.event.trigger('homing');

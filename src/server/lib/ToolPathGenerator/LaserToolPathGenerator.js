@@ -9,6 +9,9 @@ import { svgToSegments } from './SVGFill';
 //     return (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1]);
 // }
 
+import logger from '../logger';
+const log = logger("lib:ToolPathGenerator");
+
 function pointEqual(p1, p2) {
     return p1[0] === p2[0] && p1[1] === p2[1];
 }
@@ -140,7 +143,8 @@ class LaserToolPathGenerator extends EventEmitter {
         const width = img.bitmap.width;
         const height = img.bitmap.height;
 
-        const normalizer = new Normalizer('Center', 0, width, 0, height, {
+        // sa: Center -> BottomLeft
+        const normalizer = new Normalizer('BottomLeft', 0, width, 0, height, {
             x: 1 / config.density,
             y: 1 / config.density
         });

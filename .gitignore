@@ -3,6 +3,7 @@ node_modules
 node_modules.zip
 npm-debug.log
 package-lock.json
+*.json
 
 /.eslintcache
 /.nyc_output

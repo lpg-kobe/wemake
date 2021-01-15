@@ -145,10 +145,10 @@ class SocketServer {
                 log.debug(`socket.command("${port}", "${cmd}"): id=${socket.id}, args=${JSON.stringify(args)}`);
 
                 const controller = store.get(`controllers["${port}"]`);
-                if (!controller || !controller.isOpen()) {
-                    log.error(`Serial port "${port}" not accessible`);
-                    return;
-                }
+                // if (!controller || !controller.isOpen()) {
+                //    log.error(`Serial port "${port}" not accessible`);
+                //    return;
+                // }
 
                 controller.command(socket, cmd, ...args);
             });
